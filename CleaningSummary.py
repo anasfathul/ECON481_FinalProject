@@ -26,6 +26,8 @@ def clean_crash_summary(file_path):
         }
     )
     
+    crash_summary_clean['Object Struck'] = crash_summary_clean['Object Struck'].str.replace(',', '/')
+
     return crash_summary_clean
 
 if __name__ == '__main__':
