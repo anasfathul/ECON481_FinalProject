@@ -30,6 +30,7 @@ def clean_crash_summary(file_path):
 
     return crash_summary_clean
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Raw File path')
     parser.add_argument('summary_raw', help='Path to raw summary file')
