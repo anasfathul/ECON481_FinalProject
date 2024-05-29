@@ -57,7 +57,8 @@ def Parse_State_Road() -> pd.DataFrame:
     """
     Gets returns the Car Crash Data with the State Roads Parsed out
     """
-    Car_Crash = clean_crash_summary("https://docs.google.com/spreadsheets/d/e/2PACX-1vRJhryMDLGWP2PxsaXiDYb5PdBN_vmZxV0aieOFUJNuD5OBBJTR927qUVRnPFBg_5iDbFgxWzDWPvC9/pub?output=csv")
+    Car_Crash = clean_crash_summary(pd.read_csv("data/WA_Crash_Summary.csv"))
+    #Car_Crash = clean_crash_summary("https://docs.google.com/spreadsheets/d/e/2PACX-1vRJhryMDLGWP2PxsaXiDYb5PdBN_vmZxV0aieOFUJNuD5OBBJTR927qUVRnPFBg_5iDbFgxWzDWPvC9/pub?output=csv")
     AADT = get_AADT_Data()
     validSR = AADT['StateRouteNumber'].unique().tolist()
     Trafficway = ["Primary Trafficway","Secondary Trafficway"]
@@ -219,6 +220,8 @@ def randomForest_function(df1, graph_name):
     print("Classification Report:\n", classification_rep)
     print("Confusion Matrix:\n", confusion_mat)
     print("Top 10 Feature Importances:\n", importance_df)
+
+    path_name = 'visualization/' + graph_name
     
     # Visualizing feature importances
     plt.figure(figsize=(10, 6))
@@ -226,7 +229,7 @@ def randomForest_function(df1, graph_name):
     plt.title(graph_name)
     plt.xlabel('Importance')
     plt.ylabel('Feature')
-    plt.savefig(graph_name, bbox_inches='tight')
+    plt.savefig(path_name, bbox_inches='tight')
     plt.show()
 
 def weather_condition(df2):
@@ -309,7 +312,7 @@ def stratified_sample_RF(df4):
         lambda x: 1 if x in ['Fatal Collision', 'Serious Injury Collision'] else 0
     )
     # call rf function
-    randomForest_function(sampled_df, "Top 10 of Stratified sample")
+    randomForest_function(sampled_df, "Top_10_Feature_Importances_Stratified_sample")
 
 
 # COUNTY/ROAD CRASH ANALYSIS
@@ -571,11 +574,11 @@ if __name__ == '__main__':
     # Load the dataset
     CollisionDataFinalize()
     Car_Crash_to_csv()
-    car_crash_data = pd.read_csv('Car_Crash_Cleaned_AADT.csv')
+    car_crash_data = pd.read_csv('data/Car_Crash_Cleaned_AADT.csv')
     county_crash_analysis(car_crash_data)
     stateroad_crash_analysis(car_crash_data)
-    car_crash_data = pd.read_csv('Car_Crash_Cleaned_AADT.csv')
-    randomForest_function(raw_df, 'Top 10 Feature Importances')
+    car_crash_data = pd.read_csv('data/Car_Crash_Cleaned_AADT.csv')
+    randomForest_function(raw_df, 'Top_10_Feature_Importances')
     weather_condition(car_crash_data)
     lighting_condition(car_crash_data)
     stratified_sample_RF(car_crash_data)
