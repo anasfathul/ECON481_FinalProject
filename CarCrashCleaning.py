@@ -124,7 +124,7 @@ def AADT_Assignment() -> pd.DataFrame:
 
     return Car_Crash
 
-def check_and_Clean() -> pd.DataFrame:
+def CollisionDataFinalize() -> pd.DataFrame:
     """
     Checks how many null values are in the data set, how many values do not have AADT values and removes them.
     """
@@ -138,4 +138,9 @@ def Car_Crash_to_csv() -> None:
     """
     Converts the file of Car_Crash into a csv file for the group to use (so you don't have to keep loading in the data)
     """
-    check_and_Clean().to_csv('Car_Crash_Cleaned_AADT.csv', index=False)
+    CollisionDataFinalize().to_csv('Car_Crash_Cleaned_AADT.csv', index=False)
+
+if __name__ == '__main__':
+    # Load the dataset
+    CollisionDataFinalize()
+    Car_Crash_to_csv()
