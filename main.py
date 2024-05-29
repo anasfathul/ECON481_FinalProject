@@ -4,7 +4,7 @@ import re
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.metrics import confusion_matrix, classification_report
@@ -155,22 +155,18 @@ def Car_Crash_to_csv() -> None:
 
 
 # KEY FEATURES
-def randomForest_function(df1):
+def randomForest_function(df1, graph_name):
     """
-    Function that generate features importance from random forest model with 100 tree
+    Function that generate features importance from random forest model with 100 tree and 5-fold cross-validation
     """
     # Filter if needed
-    #car_crash_data = car_crash_data[(car_crash_data["County"] == "King") & (car_crash_data["City"] == "Seattle")]
     car_crash_data = df1
-    
-    # Convert the "Collision Date" column to datetime
-    car_crash_data['Collision Date'] = pd.to_datetime(car_crash_data['Collision Date'], errors='coerce')
-    
+
     # Dropping specified columns
     columns_to_drop = [
         'Primary Road Number', 'Secondary Trafficway', 
         'Secondary Road Number', 'Block Number', 'Mile Post',
-        'Object Struck', 'Associated State Road Number'
+        'Object Struck', 'Associated State Road Number', 'Collision Date'
     ]
     car_crash_data_cleaned = car_crash_data.drop(columns=columns_to_drop)
     
@@ -179,9 +175,9 @@ def randomForest_function(df1):
     for column in ['Weather Condition', 'Lighting Condition', 'Jurisdiction',
                    'Agency', 'Primary Trafficway', 'City', 'County']:
         car_crash_data_cleaned[column] = label_encoder.fit_transform(car_crash_data_cleaned[column])
-    
+
     # Features and target variable
-    X = car_crash_data_cleaned.drop(columns=['Collision Report Number', 'Collision Date', 'Injury Severity'])
+    X = car_crash_data_cleaned.drop(columns=['Collision Report Number', 'Injury Severity'])
     y = car_crash_data_cleaned['Injury Severity']
     
     # Encode target variable
@@ -190,19 +186,29 @@ def randomForest_function(df1):
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Build a Random Forest Classifier
-    rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
-    rf_classifier.fit(X_train, y_train)
+    # Build a Random Forest Classifier with GridSearchCV
+    rf_classifier = RandomForestClassifier(random_state=42)
+    param_grid = {
+        'n_estimators': [100],
+        'max_features': ['auto', 'sqrt', 'log2'],
+        'max_depth': [None, 10, 20, 30, 40, 50],
+        'criterion': ['gini', 'entropy']
+    }
+    grid_search = GridSearchCV(estimator=rf_classifier, param_grid=param_grid, cv=5, n_jobs=-1, verbose=2)
+    grid_search.fit(X_train, y_train)
+    
+    # Get the best estimator
+    best_rf_classifier = grid_search.best_estimator_
     
     # Make predictions
-    y_pred = rf_classifier.predict(X_test)
+    y_pred = best_rf_classifier.predict(X_test)
     
     # Evaluation
     classification_rep = classification_report(y_test, y_pred)
     confusion_mat = confusion_matrix(y_test, y_pred)
     
     # Get feature importances
-    feature_importances = rf_classifier.feature_importances_
+    feature_importances = best_rf_classifier.feature_importances_
     feature_names = X.columns
     
     # Create a DataFrame for the feature importances
@@ -212,14 +218,15 @@ def randomForest_function(df1):
     # Print evaluation metrics
     print("Classification Report:\n", classification_rep)
     print("Confusion Matrix:\n", confusion_mat)
-    print("Top 5 Feature Importances:\n", importance_df)
+    print("Top 10 Feature Importances:\n", importance_df)
     
     # Visualizing feature importances
     plt.figure(figsize=(10, 6))
     sns.barplot(x='Importance', y='Feature', data=importance_df, palette='viridis')
-    plt.title('Top 10 Feature Importances')
+    plt.title(graph_name)
     plt.xlabel('Importance')
     plt.ylabel('Feature')
+    plt.savefig(graph_name, bbox_inches='tight')
     plt.show()
 
 def weather_condition(df2):
@@ -296,8 +303,13 @@ def stratified_sample_RF(df4):
     filtered_df = df4.groupby('Associated State Road Number').filter(lambda x: len(x) > 100)
     # sample 100 from each state road
     sampled_df = filtered_df.groupby('Associated State Road Number').apply(lambda x: x.sample(100)).reset_index(drop=True)
+
+    # Change fatality
+    sampled_df['Injury Severity'] = sampled_df['Injury Severity'].apply(
+        lambda x: 1 if x in ['Fatal Collision', 'Serious Injury Collision'] else 0
+    )
     # call rf function
-    randomForest_function(sampled_df)
+    randomForest_function(sampled_df, "Top 10 of Stratified sample")
 
 
 # COUNTY/ROAD CRASH ANALYSIS
@@ -563,7 +575,7 @@ if __name__ == '__main__':
     county_crash_analysis(car_crash_data)
     stateroad_crash_analysis(car_crash_data)
     car_crash_data = pd.read_csv('Car_Crash_Cleaned_AADT.csv')
-    randomForest_function(car_crash_data)
+    randomForest_function(raw_df, 'Top 10 Feature Importances')
     weather_condition(car_crash_data)
     lighting_condition(car_crash_data)
     stratified_sample_RF(car_crash_data)
