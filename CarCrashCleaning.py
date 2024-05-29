@@ -6,7 +6,7 @@ def get_AADT_Data() -> pd.DataFrame:
     """
     Get the data for the Traffic Counts
     """
-    AADT = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vRXk2ssI2wP32cbxd7gJecku7nS9Mjim7Ed3dorQsgalcBYC6KbxpWKlx0ClBsmsgAcbf5QzQqt2tsy/pub?output=csv")
+    AADT = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vRXk2ssI2wP32cbxd7gJecku7nS9Mjim7Ed3dorQsgalcBYC6KbxpWKlx0ClBsmsgAcbf5QzQqt2tsy/pub?output=csv") #Data source was uploaded to a google sheets which was published online. This is because the data source is a from a query and it seems to expire after a bit of time.
     return AADT
 
 def clean_crash_summary(file_path):
@@ -45,14 +45,14 @@ def Parse_State_Road() -> pd.DataFrame:
     """
     Gets returns the Car Crash Data with the State Roads Parsed out
     """
-    Car_Crash = clean_crash_summary("https://docs.google.com/spreadsheets/d/e/2PACX-1vRJhryMDLGWP2PxsaXiDYb5PdBN_vmZxV0aieOFUJNuD5OBBJTR927qUVRnPFBg_5iDbFgxWzDWPvC9/pub?output=csv")
-    AADT = get_AADT_Data()
-    validSR = AADT['StateRouteNumber'].unique().tolist()
-    Trafficway = ["Primary Trafficway","Secondary Trafficway"]
+    Car_Crash = clean_crash_summary("https://docs.google.com/spreadsheets/d/e/2PACX-1vRJhryMDLGWP2PxsaXiDYb5PdBN_vmZxV0aieOFUJNuD5OBBJTR927qUVRnPFBg_5iDbFgxWzDWPvC9/pub?output=csv") #Gets the Car Crash Data cleaned
+    AADT = get_AADT_Data() #Get the Traffic Count Data
+    validSR = AADT['StateRouteNumber'].unique().tolist() #Lists the Valid State Road Numbers as listed on the Traffic Count data
+    Trafficway = ["Primary Trafficway","Secondary Trafficway"]  
     dict = {
       0: [],
       1: [],
-    }
+    } #Creating a dictionary to append the Trafficway data 
     for i in np.arange(2):
     
         for x in Car_Crash[Trafficway[i]]:
@@ -77,6 +77,7 @@ def Parse_State_Road() -> pd.DataFrame:
         else:
             State_Road_Num.append(dict[1][x])
 
+    #Inserts the gotten road numbers into the data set.
     Car_Crash.insert(7,"Primary Road Number", dict[0])
     Car_Crash.insert(9,"Secondary Road Number", dict[1])
     Car_Crash.insert(10, "Associated State Road Number", State_Road_Num)
@@ -90,7 +91,7 @@ def get_Mileposts() -> pd.DataFrame:
     AADT = get_AADT_Data()
     mileposts = []
     for x in AADT["Location"]:
-        match = re.search("(MILEPOST) (\d+.\d+)",x)
+        match = re.search("(MILEPOST) (\d+.\d+)",x) #Gets the mile post number from a specific format (thankfully it is consistent)
         mileposts.append(float(match.group(2)))
     AADT.insert(6, "Mile Posts", mileposts)
     return AADT
